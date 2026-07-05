@@ -14,8 +14,13 @@ if not exist ".venv\Scripts\python.exe" (
   exit /b 1
 )
 
-set /p START_DATE=Start date (YYYY-MM-DD):
-set /p END_DATE=End date (YYYY-MM-DD):
+echo Enter dates as YYYY-MM-DD only.
+echo Example start date: 2025-09-15
+echo Example end date:   2026-08-04
+echo.
+
+set /p START_DATE=Start date:
+set /p END_DATE=End date:
 
 if "%START_DATE%"=="" (
   echo Start date is required.

@@ -6,6 +6,12 @@ echo.
 echo FITR Exporter - first-time setup
 echo =================================
 echo.
+echo This may take several minutes the first time.
+echo It will create a local .venv folder, install Python packages,
+echo and download a Playwright Chromium browser used by the exporter.
+echo.
+echo This is expected. No FITR password is requested or stored.
+echo.
 
 where python >nul 2>nul
 if errorlevel 1 (

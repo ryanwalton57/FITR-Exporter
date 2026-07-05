@@ -55,6 +55,48 @@ Example:
 2026-08-04
 ```
 
+## What To Expect From The Batch Files
+
+`setup_windows.bat` is the first-time setup file. It may take several minutes and it will download/install things in the project folder:
+
+- a local Python environment in `.venv/`
+- the Python packages listed in `requirements.txt`
+- a Playwright-managed Chromium browser
+
+You may see a lot of scrolling text while packages download and install. That is expected. You only need to run `setup_windows.bat` once per computer, unless you delete `.venv/` or move to a fresh copy of the project.
+
+`export_workouts.bat` is the file you use after setup. It will:
+
+1. Ask for a start date.
+2. Ask for an end date.
+3. Open Chromium.
+4. Let you log in to FITR manually.
+5. Wait until you press Enter in the command window.
+6. Export the workouts it can see.
+
+When entering dates, type only the date in this exact format:
+
+```text
+YYYY-MM-DD
+```
+
+Do not type words like `start`, `end`, slashes, or extra spaces.
+
+Good examples:
+
+```text
+2025-09-15
+2026-08-04
+```
+
+Bad examples:
+
+```text
+9/15/2025
+Sept 15 2025
+start 2025-09-15
+```
+
 ## Normal Export Command
 
 If you are comfortable with a terminal, you can run the exporter directly:
