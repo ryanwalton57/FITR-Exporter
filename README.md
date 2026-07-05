@@ -2,7 +2,7 @@
 
 Export your own FITR Client workout history to files on your computer.
 
-This tool opens a normal Chromium browser, lets you log in to FITR yourself, clicks through your own calendar, and saves the workouts it can see. It does not ask for your FITR password, store your password, bypass login, or try to access anyone else's account.
+This tool opens a normal Chromium browser, lets you log in to FITR yourself, clicks through your own calendar, and saves the workouts it can see. FITR may ask for your username and password in the browser, just like normal. This exporter does not ask for your FITR password in the command window, store your password, bypass login, or try to access anyone else's account.
 
 ## Support And Compatibility
 
@@ -72,7 +72,7 @@ You may see a lot of scrolling text while packages download and install. That is
 1. Ask for a start date.
 2. Ask for an end date.
 3. Open Chromium.
-4. Let you log in to FITR manually.
+4. Let you log in to FITR manually in the browser if FITR asks.
 5. Wait until you press Enter in the command window.
 6. Export the workouts it can see.
 
@@ -148,9 +148,10 @@ The tool uses a local Chromium browser profile stored at:
 
 That means:
 
-- You log in manually in the browser.
-- The tool does not need your username or password.
-- The tool does not store your password in code.
+- You log in manually on FITR's normal login page in the browser.
+- FITR may ask for your username and password in that browser window.
+- The command window should not ask for your FITR username or password.
+- The exporter code does not store your password.
 - Future runs usually stay logged in.
 - Delete `.fitr-browser-profile/` if you want to force a fresh login.
 
