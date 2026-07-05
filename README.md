@@ -48,6 +48,8 @@ Date format must be:
 YYYY-MM-DD
 ```
 
+The start date should be the older/earlier date. The end date should be the newer/later date.
+
 Example:
 
 ```text
@@ -80,13 +82,15 @@ When entering dates, type only the date in this exact format:
 YYYY-MM-DD
 ```
 
+Use the older date as the start date and the newer date as the end date.
+
 Do not type words like `start`, `end`, slashes, or extra spaces.
 
 Good examples:
 
 ```text
-2025-09-15
-2026-08-04
+Start date: 2025-09-15
+End date:   2026-08-04
 ```
 
 Bad examples:

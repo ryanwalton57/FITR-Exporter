@@ -15,6 +15,8 @@ if not exist ".venv\Scripts\python.exe" (
 )
 
 echo Enter dates as YYYY-MM-DD only.
+echo Start date should be the older/earlier date.
+echo End date should be the newer/later date.
 echo Example start date: 2025-09-15
 echo Example end date:   2026-08-04
 echo.
