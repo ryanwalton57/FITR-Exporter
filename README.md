@@ -4,6 +4,12 @@ Export your own FITR Client workout history to files on your computer.
 
 This tool opens a normal Chromium browser, lets you log in to FITR yourself, clicks through your own calendar, and saves the workouts it can see. It does not ask for your FITR password, store your password, bypass login, or try to access anyone else's account.
 
+## Support And Compatibility
+
+This project is provided **as is**. It is unsupported, and there is no guarantee of help, fixes, updates, or compatibility with future FITR changes.
+
+The current parser was built and tested against **Operation LFG from coach Josh Bridges**. It has not been tested with other FITR programs, coaches, calendar formats, or workout layouts. Other programs may export partially, incorrectly, or not at all.
+
 ## What You Get
 
 Each export creates a new timestamped folder under:
@@ -25,7 +31,9 @@ Personal workout data is ignored by Git. The `.gitignore` excludes `fitr_output/
 
 1. Install Python from <https://www.python.org/downloads/windows/>.
 2. During Python install, check **Add python.exe to PATH**.
-3. Download or clone this project.
+3. Download this project from GitHub.
+   - Easiest option: click the green **Code** button, click **Download ZIP**, unzip the file, and open the unzipped folder.
+   - Git option: if you already use Git, run `git clone <repo-url>` and open the cloned folder.
 4. Double-click `setup_windows.bat`.
 5. Double-click `export_workouts.bat`.
 6. Enter your start and end dates when prompted.
@@ -141,38 +149,6 @@ The default exporter uses the visible FITR calendar page:
 
 The tool is intentionally gentle. It uses visible browser actions and delays instead of aggressive request loops.
 
-## Discovery Mode
-
-Discovery mode is for troubleshooting if FITR changes the website.
-
-```powershell
-python .\fitr_discovery.py
-```
-
-It opens the calendar and saves page structure information under:
-
-```text
-fitr_output/discovery/
-```
-
-Most users do not need discovery mode.
-
-## Optional API Discovery
-
-There is experimental support for observing FITR's own XHR/fetch JSON responses:
-
-```powershell
-python .\fitr_discovery.py --api-discovery
-```
-
-Raw JSON is off by default because it may contain personal workout/account data. Only enable raw samples if you know you need them:
-
-```powershell
-python .\fitr_discovery.py --api-discovery --save-raw-api-samples
-```
-
-Do not share raw samples publicly without reviewing them.
-
 ## Important Privacy Notes
 
 Do not commit or share:
@@ -217,14 +193,15 @@ python .\fitr_export.py --start-date 2025-09-29 --end-date 2025-10-01
 
 If FITR changes the page layout:
 
-- Run discovery mode.
-- Save the discovery output.
-- The selectors may need to be updated.
+- The exporter may need an update.
+- Save the error message and the date range you tried.
+- Do not share exported workout files unless you are comfortable sharing that personal data.
 
 ## Known Limitations
 
+- This tool is unsupported and provided as is.
 - The default export depends on FITR's visible calendar UI.
+- The parser has only been tested with Operation LFG from coach Josh Bridges.
 - If FITR changes button labels, modal structure, or calendar layout, selectors may need updates.
 - Calendar dates are inferred from the rendered calendar order.
 - Markdown and CSV output contain personal workout data.
-- Experimental captured-JSON mode exists, but it has been slower than the visible-page exporter in testing.
