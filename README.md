@@ -1,211 +1,64 @@
-# FITR Client Workout History Export
+# FITR Workout Exporter
 
-Local Playwright tooling for exporting your own workout history from FITR Client.
+Export your own FITR Client workout history to files on your computer.
 
-This project does not scrape credentials, bypass authentication, or access anything outside the account you manually log in to. Chromium runs non-headless and stores its session locally in `.fitr-browser-profile/`.
+This tool opens a normal Chromium browser, lets you log in to FITR yourself, clicks through your own calendar, and saves the workouts it can see. It does not ask for your FITR password, store your password, bypass login, or try to access anyone else's account.
 
-## Current Architecture
+## What You Get
 
-The exporter now defaults to the faster **Playwright DOM scraper**:
-
-- It opens a real Chromium browser.
-- You log in to FITR manually.
-- Playwright reuses the browser session stored in `.fitr-browser-profile/`.
-- The exporter opens the FITR calendar once so the same logged-in browser context is active.
-- In normal export mode, it reads the visible logged-in page.
-- In experimental `--extraction-mode auto` or `--extraction-mode api`, it also tries to use FITR's own captured JSON responses while the logged-in frontend loads calendar/workout data.
-- Captured JSON is currently slower in observed test runs, so `dom` is the default.
-- The DOM scraper opens calendar pages such as `https://app.fitr.training/user/calendar?year=2026&month=7&day=1`.
-- The DOM scraper finds rendered calendar cards with `[aria-label="Open schedule modal workout"]`.
-- The DOM scraper clicks workout/rest-day cards, expands visible section chevrons, and reads visible modal text.
-- It writes `workouts.md`, `workouts.csv`, `workouts.json`, per-workout raw text files, logs, and card-debug JSON.
-
-The JSON responses were identified from discovery output and currently include:
+Each export creates a new timestamped folder under:
 
 ```text
-GET https://app.fitr.training/api/users/me
-GET https://app.fitr.training/api/schedule?from=<YYYY-MM-DD>&to=<YYYY-MM-DD>
-GET https://app.fitr.training/api/schedule/<schedule_id>/athlete/<athlete_id>
-GET https://app.fitr.training/api/schedule/<schedule_id>/comments?recipient_id=<athlete_id>
+fitr_output/export/
 ```
 
-These responses are produced by FITR's own logged-in frontend. The tool does not bypass authentication and does not hard-code or extract credentials.
+The most useful files are:
 
-Session persistence is browser-managed. The scripts do not read, print, or store passwords. They do not intentionally read auth tokens from local storage, session storage, or cookies.
+- `workouts.md` - the easiest file to read.
+- `workouts.csv` - spreadsheet-friendly, good for Excel or Google Sheets.
+- `workouts.json` - structured data for technical use.
+- `raw_text/` - one text file per exported day.
 
-## URLs And Assumptions
+Personal workout data is ignored by Git. The `.gitignore` excludes `fitr_output/`, `.fitr-browser-profile/`, virtual environments, caches, and common spreadsheet/data files.
 
-Explicit URLs opened by the tool:
+## Quick Start For Windows
+
+1. Install Python from <https://www.python.org/downloads/windows/>.
+2. During Python install, check **Add python.exe to PATH**.
+3. Download or clone this project.
+4. Double-click `setup_windows.bat`.
+5. Double-click `export_workouts.bat`.
+6. Enter your start and end dates when prompted.
+7. Log in to FITR in the Chromium window if asked.
+8. When the FITR calendar is visible, return to the command window and press Enter.
+9. Open the newest folder in `fitr_output/export/`.
+10. Open `workouts.md` or `workouts.csv`.
+
+Date format must be:
 
 ```text
-https://app.fitr.training/user/calendar
-https://app.fitr.training/user/calendar?year=<year>&month=<month>&day=1
+YYYY-MM-DD
 ```
 
-Authenticated API endpoints observed/captured during export mode:
+Example:
 
 ```text
-https://app.fitr.training/api/users/me
-https://app.fitr.training/api/schedule?from=<YYYY-MM-DD>&to=<YYYY-MM-DD>
-https://app.fitr.training/api/schedule/<schedule_id>/athlete/<athlete_id>
-https://app.fitr.training/api/schedule/<schedule_id>/comments?recipient_id=<athlete_id>
+2025-09-15
+2026-08-04
 ```
 
-Important DOM assumptions:
+## Normal Export Command
 
-- Workout cards expose `aria-label="Open schedule modal workout"`.
-- Calendar cards are rendered in Monday-start grid order.
-- Day details appear in a modal/dialog after clicking a card.
-- Modal headers look like `Mon, March 30 Week 27, Day 1`.
-- Collapsed sections can be opened by buttons/role-buttons that look like chevrons or expand controls.
-
-If FITR changes those UI details, rerun discovery mode and update the selectors.
-
-## Setup
+If you are comfortable with a terminal, you can run the exporter directly:
 
 ```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-python -m playwright install chromium
+python .\fitr_export.py --start-date 2025-09-15 --end-date 2026-08-04
 ```
 
-## Discovery
-
-Run:
+The exporter stops when it reaches `Week 1, Day 1` by default. To keep going past that point:
 
 ```powershell
-python .\fitr_discovery.py --start-date 2026-01-01 --end-date 2026-07-04
-```
-
-What happens:
-
-1. Chromium opens visibly.
-2. Log in manually if FITR asks you to.
-3. Press Enter in the terminal once the calendar page is visible.
-4. The script saves text and page-structure files under `fitr_output/discovery/<timestamp>/`.
-
-The discovery output includes:
-
-- visible page text,
-- likely workout text snippets,
-- summarized links, buttons, inputs, forms, tables, and common interactive elements,
-- likely calendar/workout elements based on text, roles, attributes, and links,
-- browser console messages.
-
-Screenshots are off by default. Add `--screenshots` if you want visual debugging files.
-
-To try opening a few likely workout entries and saving their page text:
-
-```powershell
-python .\fitr_discovery.py --start-date 2026-01-01 --end-date 2026-07-04 --click-likely 3
-```
-
-If workout details only appear after you manually click a calendar day, use manual capture mode:
-
-```powershell
-python .\fitr_discovery.py --start-date 2026-01-01 --end-date 2026-07-04 --manual-capture
-```
-
-In that mode, click a day or workout in Chromium, then press Enter in the terminal to save the visible workout text. Repeat for as many workouts as you want, then type `q` in the terminal to finish.
-
-If the day modal has collapsed workout sections, add:
-
-```powershell
-python .\fitr_discovery.py --start-date 2026-01-01 --end-date 2026-07-04 --manual-capture --expand-before-capture
-```
-
-## API Discovery Mode
-
-Use API discovery mode to observe candidate FITR XHR/fetch JSON responses without exporting workouts:
-
-```powershell
-python .\fitr_discovery.py --api-discovery
-```
-
-Workflow:
-
-1. Chromium opens.
-2. Log in manually if needed.
-3. Click around the calendar, months, days, and workout modals.
-4. Press Enter in the terminal when done.
-
-Discovery writes:
-
-```text
-fitr_output/discovery/<timestamp>/api_samples/
-  candidate_endpoints.txt
-  candidate_endpoints.json
-  structure/
-```
-
-Sanitized structure samples are saved by default. Raw JSON bodies are off by default because they may contain personal workout/account data. To save raw JSON samples for debugging:
-
-```powershell
-python .\fitr_discovery.py --api-discovery --save-raw-api-samples
-```
-
-Raw samples are written under:
-
-```text
-fitr_output/discovery/<timestamp>/api_samples/raw/
-```
-
-Do not share raw samples publicly unless you have reviewed them.
-
-## Automated Export
-
-After you have logged in once, run:
-
-```powershell
-python .\fitr_export.py --start-date 2026-01-01 --end-date 2026-07-04
-```
-
-The exporter:
-
-- opens Chromium visibly with the same persisted local profile,
-- defaults to `--extraction-mode dom`, which uses the faster visible-page scraper,
-- uses polite delays between month loads, workout opens, and section expansion,
-- visits each month/date range from newest to oldest,
-- writes one raw text file per exported day plus the one-file Markdown report,
-- records rest days as compact entries with date/week/day and `REST DAY`,
-- parses `Week #, Day #` from FITR API data or the DOM day header when available,
-- stops after exporting Week 1, Day 1 by default,
-- writes a formatted `workouts.md` report plus `workouts.json` and `workouts.csv`.
-
-When the DOM fallback is used, it also:
-
-- finds visible workout cards using `aria-label="Open schedule modal workout"`,
-- infers each card date from its calendar grid row and column,
-- includes adjacent-month spillover days when needed and de-duplicates by date,
-- opens each workout gently,
-- expands visible collapsed section chevrons in the day modal,
-- saves raw visible workout detail text,
-- omits movement-video `Media` sections while keeping substitutions and scales,
-- closes the detail modal before continuing.
-
-To try the experimental captured-JSON path during the normal UI walk:
-
-```powershell
-python .\fitr_export.py --start-date 2026-01-01 --end-date 2026-07-04 --extraction-mode api
-```
-
-To explicitly force the visible-text DOM scraper:
-
-```powershell
-python .\fitr_export.py --start-date 2026-01-01 --end-date 2026-07-04 --extraction-mode dom
-```
-
-To capture candidate API/XHR JSON while exporting:
-
-```powershell
-python .\fitr_export.py --start-date 2026-01-01 --end-date 2026-07-04 --capture-api-json-samples
-```
-
-This saves sanitized endpoint structures for debugging. To also save raw JSON response bodies:
-
-```powershell
-python .\fitr_export.py --start-date 2026-01-01 --end-date 2026-07-04 --capture-api-json-samples --save-raw-api-samples
+python .\fitr_export.py --start-date 2025-09-15 --end-date 2026-08-04 --no-stop-at-week1-day1
 ```
 
 For a small test run:
@@ -214,79 +67,164 @@ For a small test run:
 python .\fitr_export.py --start-date 2026-07-01 --end-date 2026-07-07 --max-workouts 3
 ```
 
-The exporter defaults to 80 expansion passes per opened day, which covers deeply nested substitutions and scales sections. You can raise it if needed:
+## First-Time Setup By Terminal
+
+The batch file does these steps for you, but they are listed here for reference:
 
 ```powershell
-python .\fitr_export.py --start-date 2026-07-01 --end-date 2026-07-07 --max-expand-passes 10
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python -m playwright install chromium
 ```
 
-FITR day headers like `Wed, July 01 Week 40, Day 3` are exported as `program_week` and `program_day` automatically. You only need to provide the calendar date range.
-
-To keep exporting past Week 1, Day 1:
+After setup, run:
 
 ```powershell
-python .\fitr_export.py --start-date 2025-09-15 --end-date 2026-08-04 --no-stop-at-week1-day1
+python .\fitr_export.py --start-date 2025-09-15 --end-date 2026-08-04
 ```
 
-If FITR changes the calendar markup, rerun `fitr_discovery.py` and update `WORKOUT_SELECTOR` in [fitr_export.py](C:/Users/ak574/Documents/Github/FITR/fitr_export.py:14).
+## How Login Works
 
-## Output Files
-
-Discovery runs create files like:
+The tool uses a local Chromium browser profile stored at:
 
 ```text
-fitr_output/
-  export/
-    20260704_120500/
-      export.log
-      workouts.md
-      workouts.json
-      workouts.csv
-      raw_text/
-        0001_2026-07-01_Operation_LFG.txt
-      api_samples/
-        candidate_endpoints.txt
-        candidate_endpoints.json
-        structure/
-  discovery/
-    20260704_120000/
-      discovery.log
-      page_text.txt
-      workout_text_candidates.txt
-      manual_capture_01_page_text.txt
-      manual_capture_01_structure.json
-      manual_captures.json
-      clicked_01_page_text.txt
-      page_structure.json
-      likely_workout_elements.json
+.fitr-browser-profile/
 ```
 
-## Next Step
+That means:
 
-Open `workouts.md` first. It is the human-readable one-file report. Use `workouts.csv` for spreadsheets; it includes the cleaned workout text in a `workout_text` column. Use `workouts.json` for structured data.
+- You log in manually in the browser.
+- The tool does not need your username or password.
+- The tool does not store your password in code.
+- Future runs usually stay logged in.
+- Delete `.fitr-browser-profile/` if you want to force a fresh login.
 
-The included exporter handles the first pass. After reviewing real `raw_text` output, improve field parsing for:
+## CSV Columns
 
-- exercises,
-- sets,
-- reps,
-- weights,
-- detailed notes,
-- visible comments,
-- completion status.
+`workouts.csv` includes separate columns for the FITR week and day:
 
-## Notes
+```text
+week_number
+day_number
+```
 
-- Session state is stored in `.fitr-browser-profile/`. Delete that folder to force a fresh login.
-- Keep request rates gentle. This project is intended for personal data export, not automated load generation.
-- If FITR changes its UI, rerun discovery and update selectors before exporting.
-- Use this tool only to export your own workout history from your own authenticated FITR account.
-- Do not use it to bypass authentication, scrape credentials, or access another person's data.
+It also includes:
+
+- `date`
+- `title`
+- `program_name`
+- `day_header`
+- `is_rest_day`
+- `completion_status`
+- `calendar_card_text`
+- `workout_text`
+- `notes`
+- `raw_text_file`
+
+The full workout text is in the `workout_text` column.
+
+## What The Exporter Does
+
+The default exporter uses the visible FITR calendar page:
+
+1. Opens FITR calendar.
+2. Waits for you to log in manually.
+3. Visits calendar months from newest to oldest.
+4. Clicks each visible workout or rest day in the date range.
+5. Expands visible collapsed sections.
+6. Omits video/media sections.
+7. Keeps workout text, substitutions, and scales.
+8. Records rest days as rest days.
+9. Stops at Week 1 Day 1 unless told not to.
+10. Writes Markdown, CSV, JSON, logs, and raw text files.
+
+The tool is intentionally gentle. It uses visible browser actions and delays instead of aggressive request loops.
+
+## Discovery Mode
+
+Discovery mode is for troubleshooting if FITR changes the website.
+
+```powershell
+python .\fitr_discovery.py
+```
+
+It opens the calendar and saves page structure information under:
+
+```text
+fitr_output/discovery/
+```
+
+Most users do not need discovery mode.
+
+## Optional API Discovery
+
+There is experimental support for observing FITR's own XHR/fetch JSON responses:
+
+```powershell
+python .\fitr_discovery.py --api-discovery
+```
+
+Raw JSON is off by default because it may contain personal workout/account data. Only enable raw samples if you know you need them:
+
+```powershell
+python .\fitr_discovery.py --api-discovery --save-raw-api-samples
+```
+
+Do not share raw samples publicly without reviewing them.
+
+## Important Privacy Notes
+
+Do not commit or share:
+
+- `fitr_output/`
+- `.fitr-browser-profile/`
+- exported `.csv`, `.xlsx`, `.jsonl`, or raw workout files
+- screenshots containing your account or workout data
+
+This project is for exporting your own workout history from your own FITR account only.
+
+Do not use it to:
+
+- bypass authentication
+- scrape credentials
+- access someone else's account
+- generate heavy traffic against FITR
+
+## Troubleshooting
+
+If `export_workouts.bat` says Python is missing:
+
+- Install Python from <https://www.python.org/downloads/windows/>.
+- Make sure **Add python.exe to PATH** is checked.
+- Close and reopen the command window.
+- Run `setup_windows.bat` again.
+
+If Chromium opens but FITR is not logged in:
+
+- Log in manually.
+- Wait for the calendar to appear.
+- Return to the command window and press Enter.
+
+If the export misses a day:
+
+- Try a small date range around the missing day.
+- Example:
+
+```powershell
+python .\fitr_export.py --start-date 2025-09-29 --end-date 2025-10-01
+```
+
+If FITR changes the page layout:
+
+- Run discovery mode.
+- Save the discovery output.
+- The selectors may need to be updated.
 
 ## Known Limitations
 
-- Captured JSON extraction depends on FITR's private authenticated JSON response shapes, which may change without notice.
-- DOM fallback depends on FITR's rendered UI and selectors.
-- DOM fallback calendar dates are inferred from rendered calendar order.
-- API output formats section descriptions, benchmarks, performances, and comments from the JSON shape we have observed so far.
-- Markdown and CSV output contain personal workout data; review before sharing.
+- The default export depends on FITR's visible calendar UI.
+- If FITR changes button labels, modal structure, or calendar layout, selectors may need updates.
+- Calendar dates are inferred from the rendered calendar order.
+- Markdown and CSV output contain personal workout data.
+- Experimental captured-JSON mode exists, but it has been slower than the visible-page exporter in testing.

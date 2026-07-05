@@ -1,0 +1,43 @@
+@echo off
+setlocal
+cd /d "%~dp0"
+
+echo.
+echo FITR Workout Exporter
+echo =====================
+echo.
+
+if not exist ".venv\Scripts\python.exe" (
+  echo The local Python environment was not found.
+  echo Run setup_windows.bat first.
+  pause
+  exit /b 1
+)
+
+set /p START_DATE=Start date (YYYY-MM-DD):
+set /p END_DATE=End date (YYYY-MM-DD):
+
+if "%START_DATE%"=="" (
+  echo Start date is required.
+  pause
+  exit /b 1
+)
+
+if "%END_DATE%"=="" (
+  echo End date is required.
+  pause
+  exit /b 1
+)
+
+echo.
+echo Chromium will open. Log in to FITR if asked.
+echo Return to this window and press Enter when the FITR calendar is visible.
+echo.
+
+".venv\Scripts\python.exe" fitr_export.py --start-date %START_DATE% --end-date %END_DATE%
+
+echo.
+echo Done. Look in fitr_output\export for the newest timestamped folder.
+echo Open workouts.md for a readable report or workouts.csv for Excel.
+echo.
+pause
