@@ -1,0 +1,7 @@
+.fitr-browser-profile/
+fitr_output/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
